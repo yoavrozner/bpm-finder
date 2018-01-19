@@ -5,6 +5,7 @@ import sys
 import pyaudio
 import matplotlib.pyplot as plt
 import numpy as np
+from pydub import AudioSegment
 
 SAMPLE_LEN = 230000
 CHUNK = 1024
@@ -56,8 +57,35 @@ def hear_the_wave():
     p.terminate()
 
 
+def slice_wav_file():
+    t1 = 10
+    t2 = 15
+    t1 *= 1000  # Works in milliseconds
+    t2 *= 1000
+    new_audio = AudioSegment.from_wav("try.wav")
+    new_audio = new_audio[t1:t2]
+    new_audio.export('newSong.wav', format="wav")  # Exports to a wav file in the current path.
+
+
+def wav_to_floats(wave_file="newSong.wav"):
+    w = wave.open(wave_file)
+    astr = w.readframes(w.getnframes())
+    # convert binary chunks to short
+    a = struct.unpack("%ih" % (w.getnframes()*w.getnchannels()), astr)
+    a = [float(val) / pow(2, 15) for val in a]
+    return a
+
+
+def print_float():
+    signal = wav_to_floats()
+    print "read " + str(len(signal)) + " frames"
+    print "in the range " + str(min(signal)) + " to " + str(min(signal))
+
+
 def main():
-    spf = wave.open('try.wav', 'r')
+    slice_wav_file()
+    print_float()
+    spf = wave.open('newSong.wav', 'r')
 
     #Extract Raw Audio from Wav File
     signal = spf.readframes(-1)
