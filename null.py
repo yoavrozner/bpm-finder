@@ -11,19 +11,6 @@ SAMPLE_LEN = 230000
 CHUNK = 1024
 
 
-def create_a_wave():
-    noise_output = wave.open('noise.wav', 'w')
-    noise_output.setparams((2, 2, 44100, 0, 'NONE', 'not compressed'))
-
-    for i in range(0, SAMPLE_LEN):
-            value = random.randint(-32767, 32767)
-            packed_value = struct.pack('h', value)
-            noise_output.writeframes(packed_value)
-            noise_output.writeframes(packed_value)
-
-    noise_output.close()
-
-
 def hear_the_wave():
     sys.argv.append('noise.wav')
     if len(sys.argv) < 2:
@@ -58,8 +45,8 @@ def hear_the_wave():
 
 
 def slice_wav_file():
-    t1 = 10
-    t2 = 15
+    t1 = 30
+    t2 = 35
     t1 *= 1000  # Works in milliseconds
     t2 *= 1000
     new_audio = AudioSegment.from_wav("try.wav")
@@ -82,6 +69,19 @@ def print_float():
     print "in the range " + str(min(signal)) + " to " + str(min(signal))
 
 
+def find_max(signal):
+    for j in range(9):
+        i = (j - 1) * len(signal) / 9
+        max_num = 0
+        max_num_i = 0
+        while i < int(j * len(signal) / 9):
+            if signal[i] > max_num:
+                max_num = signal[i]
+                max_num_i = i
+            i += 1
+        print max_num, max_num_i
+
+
 def main():
     slice_wav_file()
     print_float()
@@ -91,6 +91,35 @@ def main():
     signal = spf.readframes(-1)
     signal = np.fromstring(signal, 'Int16')
 
+    find_max(signal)
+    # plt.figure(1)
+    # plt.title('Signal Wave...')
+    # plt.plot(signal)
+    # plt.show()
+
+
+    # arr = []
+    # arr_i = [0]
+    # print signal
+    # max_num = 0
+    # max_num_i = 0
+    # i = 0
+    # while i < len(signal):
+    #     if signal[i] > max_num:
+    #         max_num = signal[i]
+    #         max_num_i = i
+    #     i += 1
+    # print max_num, max_num_i
+    # i = 0
+    # while i < len(signal):
+    #     if not signal[i] + 3000 >= max_num or arr_i[len(arr_i) - 1] + 7000 >= i:
+    #         signal[i] = 0
+    #     else:
+    #         arr.append(signal[i])
+    #         arr_i.append(i)
+    #     i += 1
+    # print arr
+    # print "BPM: " + str(len(arr) * 12)
     #If Stereo
     # if spf.getnchannels() == 2:
     #     print 'Just mono files'
