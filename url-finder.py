@@ -1,6 +1,7 @@
 import requests
 import json
 import youtube_dl
+import os
 
 
 ACCESS_TOKEN = 'access_token=UOmQ5JLigMe6w1hJbxuMr3Y6QaCaeNzk3GC2r5M3rMoigl14X87h5RacUdhGUiPy'
@@ -29,20 +30,33 @@ def url_finder():
         return False
 
 
-def download_np4(url):
-    ydl_opts = {}
+def download_mp4(url):
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [
+            {
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'wav',
+                'preferredquality': '192',
+            }
+        ],
+    }
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
 
-def mp4_to_wav():
-    pass
+def rename():
+    files = [f for f in os.listdir('.') if os.path.isfile(f)]
+    for f in files:
+        if ".wav" in f:
+            os.rename(f, "newsong.wav")
 
 
 def main():
-    url = url_finder()
+    url = "http://www.youtube.com/watch?v=klrYlnkImHA"  # url_finder()
     print url
-    download_np4(url)
+    download_mp4(url)
+    rename()
 
 
 if __name__ == '__main__':
