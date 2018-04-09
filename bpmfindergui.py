@@ -18,7 +18,6 @@ import threading
 import struct
 import sys
 import pyaudio
-import matplotlib.pyplot as plt
 import numpy as np
 from pydub import AudioSegment
 
@@ -51,6 +50,10 @@ URL = "url"
 
 class BpmFinder(wx.Frame):
     def __init__(self, parent):
+        self.counter = 1
+        self.stop_metronome_variable = True
+        self.stop_song_variable = False
+
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"BpmFinder", pos=wx.DefaultPosition,
                           size=wx.Size(997, 604), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
@@ -130,8 +133,8 @@ class BpmFinder(wx.Frame):
         self.stop_the_song = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.DefaultSize, 0)
         boxsizer2.Add(self.stop_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        self.refresh_the_song = wx.Button(self.panel, wx.ID_ANY, u"REFRESH", wx.DefaultPosition, wx.DefaultSize, 0)
-        boxsizer2.Add(self.refresh_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        self.proceed_the_song = wx.Button(self.panel, wx.ID_ANY, u"PROCEED", wx.DefaultPosition, wx.DefaultSize, 0)
+        boxsizer2.Add(self.proceed_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.metronome_introducer = wx.StaticText(self.panel, wx.ID_ANY, u"Metronome", wx.DefaultPosition,
                                                   wx.DefaultSize, 0)
@@ -172,46 +175,20 @@ class BpmFinder(wx.Frame):
         self.enter.Bind(wx.EVT_BUTTON, self.calculate_bpm)
         self.play_the_song.Bind(wx.EVT_BUTTON, self.play_song)
         self.stop_the_song.Bind(wx.EVT_BUTTON, self.stop_song)
-        self.refresh_the_song.Bind(wx.EVT_BUTTON, self.refresh_song)
+        self.proceed_the_song.Bind(wx.EVT_BUTTON, self.proceed_song)
         self.start.Bind(wx.EVT_BUTTON, self.start_metronome)
         self.stop.Bind(wx.EVT_BUTTON, self.stop_metronome)
 
     def __del__(self):
         pass
 
-    # Virtual event handlers, overide them in your derived class
+    # Virtual event handlers, override them in your derived class
     def calculate_bpm(self, event):
-        event.Skip()
-
-    def play_song(self, event):
-        event.Skip()
-
-    def stop_song(self, event):
-        event.Skip()
-
-    def refresh_song(self, event):
-        event.Skip()
-
-    def start_metronome(self, event):
-        event.Skip()
-
-    def stop_metronome(self, event):
-        event.Skip()
-
-
-class BpmFinderGui(BpmFinder):
-    def __init__(self, parent):
-        BpmFinder.__init__(self, parent)
-        self.counter = 1
-
-    def inherent_calculate_bpm(self, event):
-        self.calculate_bpm(event)
-
         #Call to url finder main
-        name_of_the_song = self.song_name
+        name_of_the_song = self.song_name.GetValue()
         url = url_finder(name_of_the_song)
         download_wav(url)
-        rename(name_of_the_song, TRY + DOT_WAV)
+        rename(TRY + DOT_WAV)
 
         #Call to bmp finder main
         bpm = 0
@@ -229,20 +206,12 @@ class BpmFinderGui(BpmFinder):
             bpm = find_max(signal)
             bpm_tempo = bpm_check_speed(bpm)
             start_time += 10
-        self.answer_bpm = str(bpm)
+        self.answer_bpm.SetValue(str(bpm))
         os.rename(TRY + DOT_WAV, TRY + str(self.counter) + DOT_WAV)
         os.remove(NEW_SONG + DOT_WAV)
         self.counter += 1
 
-    def fast_standard_slow(self):
-        if self.fast:
-            return FAST
-        elif self.standard:
-            return STANDARD
-        return SLOW
-
-    def inherent_play_song(self, event):
-        self.play_song(event)
+    def play_song(self, event):
         wf = wave.open(TRY + DOT_WAV, RB)
 
         # instantiate PyAudio (1)
@@ -262,11 +231,8 @@ class BpmFinderGui(BpmFinder):
             stream.write(data)
             data = wf.readframes(CHUNK)
             # Stops the song
-            if self.stop_song(event):
-                if self.play_song(event):
-                    pass
-                elif self.refresh_song(event):
-                    break
+            while not self.stop_song_variable:
+                pass
         # stop stream (4)
         stream.stop_stream()
         stream.close()
@@ -274,18 +240,33 @@ class BpmFinderGui(BpmFinder):
         # close PyAudio (5)
         p.terminate()
 
-    def inherent_start_metronome(self, event):
-        self.start_metronome(event)
-        metronome_tempo = int(self.metronome_text)
+    def stop_song(self, event):
+        self.stop_song_variable = True
+
+    def proceed_song(self, event):
+        self.stop_song_variable = False
+
+    def start_metronome(self, event):
+        metronome_tempo = int(self.metronome_text.GetValue())
         if not os.path.isfile(METRONOME + str(metronome_tempo) + DOT_WAV):
             url = url_finder(METRONOME + " " + str(metronome_tempo))
             download_wav(url)
-            rename(str(metronome_tempo), METRONOME + str(metronome_tempo))
+            os.rename(str(metronome_tempo), METRONOME + str(metronome_tempo))
         self.metronome(event, metronome_tempo)
 
+    def stop_metronome(self, event):
+        self.stop_metronome_variable = True
+
+    def fast_standard_slow(self):
+        if self.fast:
+            return FAST
+        elif self.standard:
+            return STANDARD
+        return SLOW
+
     def metronome(self, event, metronome_tempo):
-        unbreaking_true = True
-        while unbreaking_true:
+        self.stop_metronome_variable = False
+        while not self.stop_metronome_variable:
             wf = wave.open(METRONOME + str(metronome_tempo) + DOT_WAV, RB)
             p = pyaudio.PyAudio()
             stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
@@ -296,9 +277,9 @@ class BpmFinderGui(BpmFinder):
             while len(data) > 0:
                 stream.write(data)
                 data = wf.readframes(CHUNK)
-                if self.stop_metronome(event):
-                    unbreaking_true = False
+                if self.stop_metronome_variable:
                     break
+
             # stop stream (4)
             stream.stop_stream()
             stream.close()
@@ -347,10 +328,10 @@ def download_wav(url):
         ydl.download([url])
 
 
-def rename(name_of_the_song, destination_name):
+def rename(destination_name):
     files = [f for f in os.listdir(DOT) if os.path.isfile(f)]
     for f in files:
-        if name_of_the_song in f:
+        if DOT_WAV in f and not TRY or METRONOME in f:
             os.rename(f, destination_name)
 
 
@@ -395,3 +376,14 @@ def bpm_check_speed(bpm):
     elif bpm <= 150:
         return STANDARD
     return FAST
+
+
+def main():
+    app = wx.App(False)
+    f = BpmFinder(None)
+    f.Show()
+    app.MainLoop()
+
+
+if __name__ == '__main__':
+    main()
