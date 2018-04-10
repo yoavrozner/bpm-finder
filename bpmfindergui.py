@@ -206,13 +206,15 @@ class BpmFinder(wx.Frame):
             bpm = find_max(signal)
             bpm_tempo = bpm_check_speed(bpm)
             start_time += 10
+            spf.close()
         self.answer_bpm.SetValue(str(bpm))
         os.rename(TRY + DOT_WAV, TRY + str(self.counter) + DOT_WAV)
         os.remove(NEW_SONG + DOT_WAV)
         self.counter += 1
 
     def play_song(self, event):
-        wf = wave.open(TRY + DOT_WAV, RB)
+        # changed
+        wf = wave.open(TRY + str(self.counter - 1) + DOT_WAV, RB)
 
         # instantiate PyAudio (1)
         p = pyaudio.PyAudio()
@@ -258,9 +260,10 @@ class BpmFinder(wx.Frame):
         self.stop_metronome_variable = True
 
     def fast_standard_slow(self):
-        if self.fast:
+        # changed
+        if self.fast.GetValue():
             return FAST
-        elif self.standard:
+        elif self.standard.GetValue():
             return STANDARD
         return SLOW
 
@@ -331,7 +334,8 @@ def download_wav(url):
 def rename(destination_name):
     files = [f for f in os.listdir(DOT) if os.path.isfile(f)]
     for f in files:
-        if DOT_WAV in f and not TRY or METRONOME in f:
+        # or METRONOME
+        if DOT_WAV in f and not TRY  in f:
             os.rename(f, destination_name)
 
 
@@ -365,8 +369,6 @@ def find_max(signal):
                 arr_max.append(signal[i])
                 place.append(i)
         i += 1
-    print arr_max
-    print place
     return len(arr_max) * 6
 
 
