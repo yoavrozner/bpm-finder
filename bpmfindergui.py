@@ -252,11 +252,12 @@ class BpmFinder(wx.Frame):
 
     def start_metronome(self, event):
         metronome_tempo = int(self.metronome_text.GetValue())
-        if not os.path.isfile(METRONOME + str(metronome_tempo) + DOT_WAV):
-            url = url_finder(METRONOME + " " + str(metronome_tempo))
-            download_wav(url)
-            os.rename(str(metronome_tempo), METRONOME + str(metronome_tempo))
-        self.metronome(event, metronome_tempo)
+        hold = 60 / metronome_tempo
+        i = 0
+        while i < metronome_tempo:
+            metronome()
+            sleep(hold)
+            i += 1
 
     def stop_metronome(self, event):
         self.stop_metronome_variable = True
@@ -269,28 +270,25 @@ class BpmFinder(wx.Frame):
             return STANDARD
         return SLOW
 
-    def metronome(self, event, metronome_tempo):
-        self.stop_metronome_variable = False
-        while not self.stop_metronome_variable:
-            wf = wave.open(METRONOME + str(metronome_tempo) + DOT_WAV, RB)
-            p = pyaudio.PyAudio()
-            stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                            channels=wf.getnchannels(),
-                            rate=wf.getframerate(),
-                            output=True)
-            data = wf.readframes(CHUNK)
-            while len(data) > 0:
-                stream.write(data)
-                data = wf.readframes(CHUNK)
-                if self.stop_metronome_variable:
-                    break
 
-            # stop stream (4)
-            stream.stop_stream()
-            stream.close()
+def metronome():
+    wf = wave.open(METRONOME + "1" + DOT_WAV, RB)
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True)
+    data = wf.readframes(CHUNK)
+    while len(data) > 0:
+        stream.write(data)
+        data = wf.readframes(CHUNK)
 
-            # close PyAudio (5)
-            p.terminate()
+    # stop stream (4)
+    stream.stop_stream()
+    stream.close()
+
+    # close PyAudio (5)
+    p.terminate()
 
 
 ###########################################################################
@@ -336,8 +334,7 @@ def download_wav(url):
 def rename(destination_name):
     files = [f for f in os.listdir(DOT) if os.path.isfile(f)]
     for f in files:
-        # or METRONOME
-        if DOT_WAV in f and not TRY  in f:
+        if DOT_WAV in f and not TRY in f and not METRONOME in f:
             os.rename(f, destination_name)
 
 
