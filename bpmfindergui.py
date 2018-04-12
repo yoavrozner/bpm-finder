@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 ###########################################################################
 ## Python code generated with wxFormBuilder (version Jun 17 2015)
@@ -20,6 +20,7 @@ import sys
 import pyaudio
 import numpy as np
 from pydub import AudioSegment
+from time import sleep
 
 
 ACCESS_TOKEN = 'access_token=UOmQ5JLigMe6w1hJbxuMr3Y6QaCaeNzk3GC2r5M3rMoigl14X87h5RacUdhGUiPy'
@@ -233,8 +234,9 @@ class BpmFinder(wx.Frame):
             stream.write(data)
             data = wf.readframes(CHUNK)
             # Stops the song
-            while not self.stop_song_variable:
-                pass
+            while self.stop_song_variable:
+                print "I am sleeping"
+                sleep(1)
         # stop stream (4)
         stream.stop_stream()
         stream.close()
