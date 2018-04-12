@@ -54,9 +54,10 @@ class BpmFinder(wx.Frame):
         self.counter = 1
         self.stop_metronome_variable = True
         self.stop_song_variable = False
+        self.to_thread = 3
 
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"BpmFinder", pos=wx.DefaultPosition,
-                          size=wx.Size(997, 604), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          size=wx.Size(997, 400), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHintsSz(wx.DefaultSize, wx.DefaultSize)
 
@@ -131,11 +132,11 @@ class BpmFinder(wx.Frame):
                                        wx.DefaultSize, 0)
         boxsizer2.Add(self.play_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        self.stop_the_song = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.DefaultSize, 0)
-        boxsizer2.Add(self.stop_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
-
-        self.proceed_the_song = wx.Button(self.panel, wx.ID_ANY, u"PROCEED", wx.DefaultPosition, wx.DefaultSize, 0)
-        boxsizer2.Add(self.proceed_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        # self.stop_the_song = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.DefaultSize, 0)
+        # boxsizer2.Add(self.stop_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        #
+        # self.proceed_the_song = wx.Button(self.panel, wx.ID_ANY, u"PROCEED", wx.DefaultPosition, wx.DefaultSize, 0)
+        # boxsizer2.Add(self.proceed_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.metronome_introducer = wx.StaticText(self.panel, wx.ID_ANY, u"Metronome", wx.DefaultPosition,
                                                   wx.DefaultSize, 0)
@@ -157,9 +158,6 @@ class BpmFinder(wx.Frame):
         self.start = wx.Button(self.panel, wx.ID_ANY, u"START", wx.DefaultPosition, wx.DefaultSize, 0)
         boxsizer2.Add(self.start, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        self.stop = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.DefaultSize, 0)
-        boxsizer2.Add(self.stop, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
-
         gridsizer.Add(boxsizer2, 1, wx.EXPAND, 5)
 
         self.panel.SetSizer(gridsizer)
@@ -175,10 +173,7 @@ class BpmFinder(wx.Frame):
         # Connect Events
         self.enter.Bind(wx.EVT_BUTTON, self.calculate_bpm)
         self.play_the_song.Bind(wx.EVT_BUTTON, self.play_song)
-        self.stop_the_song.Bind(wx.EVT_BUTTON, self.stop_song)
-        self.proceed_the_song.Bind(wx.EVT_BUTTON, self.proceed_song)
         self.start.Bind(wx.EVT_BUTTON, self.start_metronome)
-        self.stop.Bind(wx.EVT_BUTTON, self.stop_metronome)
 
     def __del__(self):
         pass
@@ -233,10 +228,6 @@ class BpmFinder(wx.Frame):
         while len(data) > 0:
             stream.write(data)
             data = wf.readframes(CHUNK)
-            # Stops the song
-            while self.stop_song_variable:
-                print "I am sleeping"
-                sleep(1)
         # stop stream (4)
         stream.stop_stream()
         stream.close()
@@ -244,13 +235,8 @@ class BpmFinder(wx.Frame):
         # close PyAudio (5)
         p.terminate()
 
-    def stop_song(self, event):
-        self.stop_song_variable = True
-
-    def proceed_song(self, event):
-        self.stop_song_variable = False
-
     def start_metronome(self, event):
+        self.to_thread += 1
         metronome_tempo = int(self.metronome_text.GetValue())
         hold = 60 / metronome_tempo
         i = 0
@@ -258,9 +244,6 @@ class BpmFinder(wx.Frame):
             metronome()
             sleep(hold)
             i += 1
-
-    def stop_metronome(self, event):
-        self.stop_metronome_variable = True
 
     def fast_standard_slow(self):
         # changed
@@ -338,6 +321,8 @@ def rename(destination_name):
             os.rename(f, destination_name)
 
 
+def hold_a_sec():
+    sleep(1)
 ###########################################################################
 ## Bpm finder functions
 ###########################################################################
