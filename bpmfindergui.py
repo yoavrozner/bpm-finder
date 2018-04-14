@@ -204,6 +204,7 @@ class BpmFinder(wx.Frame):
             start_time += 10
             spf.close()
         self.answer_bpm.SetValue(str(bpm))
+        self.metronome_text.SetValue(str(bpm))
         os.rename(TRY + DOT_WAV, TRY + str(self.counter) + DOT_WAV)
         os.remove(NEW_SONG + DOT_WAV)
         self.counter += 1
