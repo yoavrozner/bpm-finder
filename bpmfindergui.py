@@ -14,13 +14,15 @@ import json
 import youtube_dl
 import os
 import wave
-import threading
+import subprocess
 import struct
 import sys
 import pyaudio
 import numpy as np
 from pydub import AudioSegment
 from time import sleep
+from Tkinter import *
+from PIL import Image, ImageTk
 
 
 ACCESS_TOKEN = 'access_token=UOmQ5JLigMe6w1hJbxuMr3Y6QaCaeNzk3GC2r5M3rMoigl14X87h5RacUdhGUiPy'
@@ -42,6 +44,7 @@ RB = "rb"
 SONG = "song"
 MEDIA = "media"
 URL = "url"
+GIF_FILE_NAME = 'loading.gif'
 
 
 ###########################################################################
@@ -180,6 +183,7 @@ class BpmFinder(wx.Frame):
 
     # Virtual event handlers, override them in your derived class
     def calculate_bpm(self, event):
+        loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
         #Call to url finder main
         name_of_the_song = self.song_name.GetValue()
         url = url_finder(name_of_the_song)
@@ -203,6 +207,8 @@ class BpmFinder(wx.Frame):
             bpm_tempo = bpm_check_speed(bpm)
             start_time += 10
             spf.close()
+        loading_screen.terminate()
+        self.Refresh()
         self.answer_bpm.SetValue(str(bpm))
         self.metronome_text.SetValue(str(bpm))
         os.rename(TRY + DOT_WAV, TRY + str(self.counter) + DOT_WAV)
@@ -210,6 +216,7 @@ class BpmFinder(wx.Frame):
         self.counter += 1
 
     def play_song(self, event):
+        loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
         # changed
         wf = wave.open(TRY + str(self.counter - 1) + DOT_WAV, RB)
 
@@ -225,26 +232,59 @@ class BpmFinder(wx.Frame):
         # read data
         data = wf.readframes(CHUNK)
 
+        exit_process = subprocess.Popen(['python', 'exit.py'])
+        stop_process = subprocess.Popen(['python', 'stop.py'])
+        poll_exit = None
         # play stream (3)
-        while len(data) > 0:
+        while len(data) > 0 and poll_exit is None:
             stream.write(data)
             data = wf.readframes(CHUNK)
+            poll_exit = exit_process.poll()
+            poll_stop = stop_process.poll()
+            if poll_stop is not None:
+                proceed_process = subprocess.Popen(['python', 'proceed.py'])
+                poll_proceed = None
+                while poll_proceed is None and poll_exit is None:
+                    poll_proceed = proceed_process.poll()
+                    poll_exit = exit_process.poll()
+                if poll_exit is None:
+                    stop_process = subprocess.Popen(['python', 'stop.py'])
+        if poll_stop is None:
+            stop_process.terminate()
+        else:
+            proceed_process.terminate()
         # stop stream (4)
         stream.stop_stream()
         stream.close()
 
         # close PyAudio (5)
         p.terminate()
+        loading_screen.terminate()
 
     def start_metronome(self, event):
         self.to_thread += 1
         metronome_tempo = int(self.metronome_text.GetValue())
         hold = 60 / metronome_tempo
-        i = 0
-        while i < metronome_tempo:
+        exit_process = subprocess.Popen(['python', 'exit.py'])
+        stop_process = subprocess.Popen(['python', 'stop.py'])
+        poll_exit = None
+        while poll_exit is None:
             metronome()
             sleep(hold)
-            i += 1
+            poll_exit = exit_process.poll()
+            poll_stop = stop_process.poll()
+            if poll_stop is not None:
+                proceed_process = subprocess.Popen(['python', 'proceed.py'])
+                poll_proceed = None
+                while poll_proceed is None and poll_exit is None:
+                    poll_proceed = proceed_process.poll()
+                    poll_exit = exit_process.poll()
+                if poll_exit is None:
+                    stop_process = subprocess.Popen(['python', 'stop.py'])
+        if poll_stop is None:
+            stop_process.terminate()
+        else:
+            proceed_process.terminate()
 
     def fast_standard_slow(self):
         # changed
@@ -278,6 +318,7 @@ def metronome():
 ###########################################################################
 ## Url finder functions
 ###########################################################################
+
 
 def url_finder(name_of_the_song):
     try:
@@ -322,8 +363,16 @@ def rename(destination_name):
             os.rename(f, destination_name)
 
 
-def hold_a_sec():
-    sleep(1)
+def delete_files():
+    """
+    Deletes every wav file in the current directory except the metronome
+    file so they will not interrupt the rename function.
+    """
+    files = [f for f in os.listdir(DOT) if os.path.isfile(f)]
+    for f in files:
+        if DOT_WAV in f and not METRONOME + str(1) in f:
+            os.remove(f)
+
 ###########################################################################
 ## Bpm finder functions
 ###########################################################################
@@ -366,6 +415,7 @@ def bpm_check_speed(bpm):
 
 
 def main():
+    delete_files()
     app = wx.App(False)
     f = BpmFinder(None)
     f.Show()
