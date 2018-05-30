@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-###########################################################################
-## Python code generated with wxFormBuilder (version Jun 17 2015)
-## http://www.wxformbuilder.org/
-##
-## PLEASE DO "NOT" EDIT THIS FILE!
-###########################################################################
+"""
+Name: Yoav Rozner
+Version: 1.16
+Description: Finds the speed of the song's rhythm in Beats Per Minute (BPM).
+             Moreover, Bpm Finder allows the user to hear the song and the song's
+             speed of rhythm by allowing fast and accessible metronome.
+"""
 
 import wx
 import wx.xrc
