@@ -55,7 +55,6 @@ class BpmFinder(wx.Frame):
         self.counter = 1
         self.stop_metronome_variable = True
         self.stop_song_variable = False
-        self.to_thread = 3
 
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"BpmFinder", pos=wx.DefaultPosition,
                           size=wx.Size(997, 400), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
@@ -80,6 +79,7 @@ class BpmFinder(wx.Frame):
         boxsizer1.Add(self.step_1, 0, wx.ALL, 5)
 
         self.song_name = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(400, -1), 0)
+        # Limits the maximum capcity of the textctrl to 100 characters.
         self.song_name.SetMaxLength(100)
         boxsizer1.Add(self.song_name, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
@@ -280,8 +280,10 @@ class BpmFinder(wx.Frame):
             loading_screen.terminate()
 
     def start_metronome(self, event):
+      """
+      Display a metronome with the wanted BPM.
+      """
         try:
-            self.to_thread += 1
             metronome_tempo = int(self.metronome_text.GetValue())
             hold = 60 / metronome_tempo
             exit_process = subprocess.Popen(['python', 'exit.py'])
@@ -310,7 +312,6 @@ class BpmFinder(wx.Frame):
             self.song_name.SetValue("Error: we can't divide with zero yet.")
 
     def fast_standard_slow(self):
-        # changed
         if self.fast.GetValue():
             return FAST
         elif self.standard.GetValue():
@@ -344,6 +345,9 @@ def metronome():
 
 
 def url_finder(name_of_the_song):
+  """
+  Findes the url of the song by his name.
+  """
     try:
         response = requests.get(BASE_SEARCH_BY_NAME + str(name_of_the_song) + "&" + ACCESS_TOKEN)
         response = response.json()
@@ -365,6 +369,9 @@ def url_finder(name_of_the_song):
 
 
 def download_wav(url):
+  """
+  Downloads the song from You Tube by the url.
+  """
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [
@@ -403,9 +410,15 @@ def delete_files():
 
 
 def slice_wav_file(start_time):
+  """
+  Slices the wave file to a 10 seconds wave file,
+  so all the modules will be able to support and allow
+  the code to use them.
+  """
     t1 = start_time
     t2 = t1 + 10
-    t1 *= 1000  # Works in milliseconds
+    # Works in milliseconds
+    t1 *= 1000
     t2 *= 1000
     new_audio = AudioSegment.from_wav(TRY + DOT_WAV)
     new_audio = new_audio[t1:t2]
@@ -413,6 +426,11 @@ def slice_wav_file(start_time):
 
 
 def find_max(signal):
+  """
+  Findes the closest places in the signal to the
+  maximum place in the signal between the average best working
+  frequency range that is the most precised.
+  """
     max_signal = max(signal)
     arr_max = []
     place = []
