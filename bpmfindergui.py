@@ -24,7 +24,10 @@ from pydub import AudioSegment
 from time import sleep
 from Tkinter import *
 from PIL import Image, ImageTk
-
+import win32gui
+import win32con
+import win32process
+import ctypes
 
 ACCESS_TOKEN = 'access_token=UOmQ5JLigMe6w1hJbxuMr3Y6QaCaeNzk3GC2r5M3rMoigl14X87h5RacUdhGUiPy'
 BASE_SEARCH_BY_NAME = 'https://api.genius.com/search?q='
@@ -83,6 +86,7 @@ class BpmFinder(wx.Frame):
         boxsizer1.Add(self.step_1, 0, wx.ALL, 5)
 
         self.song_name = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(400, -1), 0)
+        self.song_name.SetMaxLength(100)
         boxsizer1.Add(self.song_name, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.step_2 = wx.StaticText(self.panel, wx.ID_ANY, u"Step 2 - Click on the relevant button", wx.DefaultPosition,
@@ -130,17 +134,12 @@ class BpmFinder(wx.Frame):
         boxsizer2.Add(self.answer, 0, wx.ALL, 5)
 
         self.answer_bpm = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
+        self.answer_bpm.SetMaxLength(100)
         boxsizer2.Add(self.answer_bpm, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.play_the_song = wx.Button(self.panel, wx.ID_ANY, u"Click to play the song", wx.DefaultPosition,
                                        wx.DefaultSize, 0)
         boxsizer2.Add(self.play_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
-
-        # self.stop_the_song = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.DefaultSize, 0)
-        # boxsizer2.Add(self.stop_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
-        #
-        # self.proceed_the_song = wx.Button(self.panel, wx.ID_ANY, u"PROCEED", wx.DefaultPosition, wx.DefaultSize, 0)
-        # boxsizer2.Add(self.proceed_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.metronome_introducer = wx.StaticText(self.panel, wx.ID_ANY, u"Metronome", wx.DefaultPosition,
                                                   wx.DefaultSize, 0)
@@ -157,6 +156,7 @@ class BpmFinder(wx.Frame):
         boxsizer2.Add(self.metronome_instruction, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.metronome_text = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
+        self.metronome_text.SetMaxLength(100)
         boxsizer2.Add(self.metronome_text, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.start = wx.Button(self.panel, wx.ID_ANY, u"START", wx.DefaultPosition, wx.DefaultSize, 0)
@@ -185,107 +185,135 @@ class BpmFinder(wx.Frame):
     # Virtual event handlers, override them in your derived class
     def calculate_bpm(self, event):
         loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
-        #Call to url finder main
-        name_of_the_song = self.song_name.GetValue()
-        url = url_finder(name_of_the_song)
-        download_wav(url)
-        rename(TRY + DOT_WAV)
+        try:
+            #Call to url finder main
+            name_of_the_song = self.song_name.GetValue()
+            url = url_finder(name_of_the_song)
 
-        #Call to bmp finder main
-        bpm = 0
-        start_time = 0
-        tempo = self.fast_standard_slow()
-        bpm_tempo = False
-        while tempo != bpm_tempo:
-            slice_wav_file(start_time)
-            spf = wave.open(NEW_SONG + DOT_WAV, 'r')
+            download_wav(url)
+            rename(TRY + DOT_WAV)
 
-            #Extract Raw Audio from Wav File
-            signal = spf.readframes(-1)
-            signal = np.fromstring(signal, 'Int16')
+            #Call to bmp finder main
+            bpm = 0
+            start_time = 0
+            tempo = self.fast_standard_slow()
+            bpm_tempo = False
+            while tempo != bpm_tempo:
+                slice_wav_file(start_time)
+                spf = wave.open(NEW_SONG + DOT_WAV, 'r')
 
-            bpm = find_max(signal)
-            bpm_tempo = bpm_check_speed(bpm)
-            start_time += 10
-            spf.close()
-        loading_screen.terminate()
-        self.Refresh()
-        self.answer_bpm.SetValue(str(bpm))
-        self.metronome_text.SetValue(str(bpm))
-        os.rename(TRY + DOT_WAV, TRY + str(self.counter) + DOT_WAV)
-        os.remove(NEW_SONG + DOT_WAV)
-        self.counter += 1
+                #Extract Raw Audio from Wav File
+                signal = spf.readframes(-1)
+                signal = np.fromstring(signal, 'Int16')
+
+                bpm = find_max(signal)
+                bpm_tempo = bpm_check_speed(bpm)
+                start_time += 10
+                spf.close()
+            loading_screen.terminate()
+
+            self.Refresh()
+            self.answer_bpm.SetValue(str(bpm))
+            self.metronome_text.SetValue(str(bpm))
+            os.rename(TRY + DOT_WAV, TRY + str(self.counter) + DOT_WAV)
+            os.remove(NEW_SONG + DOT_WAV)
+            self.counter += 1
+        except TypeError:
+            self.song_name.SetValue("Error: unidentified song.")
+            loading_screen.terminate()
+        except requests.ConnectionError:
+            self.song_name.SetValue("Error: there is no connection.")
+            loading_screen.terminate()
+        except ValueError:
+            self.song_name.SetValue("Error: the speed doesn't match the song's speed.")
+            loading_screen.terminate()
+        except youtube_dl.DownloadError:
+            self.song_name.SetValue("Error: there was a download error please try again.")
+            loading_screen.terminate()
+        except KeyError:
+            self.song_name.SetValue("Error: please use a real song name.")
+            loading_screen.terminate()
 
     def play_song(self, event):
+
         loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
-        # changed
-        wf = wave.open(TRY + str(self.counter - 1) + DOT_WAV, RB)
 
         # instantiate PyAudio (1)
         p = pyaudio.PyAudio()
+        try:
 
-        # open stream (2)
-        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
-                        rate=wf.getframerate(),
-                        output=True)
+            wf = wave.open(TRY + str(self.counter - 1) + DOT_WAV, RB)
+            # open stream (2)
+            stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                            channels=wf.getnchannels(),
+                            rate=wf.getframerate(),
+                            output=True)
 
-        # read data
-        data = wf.readframes(CHUNK)
-
-        exit_process = subprocess.Popen(['python', 'exit.py'])
-        stop_process = subprocess.Popen(['python', 'stop.py'])
-        poll_exit = None
-        # play stream (3)
-        while len(data) > 0 and poll_exit is None:
-            stream.write(data)
+            # read data
             data = wf.readframes(CHUNK)
-            poll_exit = exit_process.poll()
-            poll_stop = stop_process.poll()
-            if poll_stop is not None:
-                proceed_process = subprocess.Popen(['python', 'proceed.py'])
-                poll_proceed = None
-                while poll_proceed is None and poll_exit is None:
-                    poll_proceed = proceed_process.poll()
-                    poll_exit = exit_process.poll()
-                if poll_exit is None:
-                    stop_process = subprocess.Popen(['python', 'stop.py'])
-        if poll_stop is None:
-            stop_process.terminate()
-        else:
-            proceed_process.terminate()
-        # stop stream (4)
-        stream.stop_stream()
-        stream.close()
 
-        # close PyAudio (5)
-        p.terminate()
-        loading_screen.terminate()
+            exit_process = subprocess.Popen(['python', 'exit.py'])
+            stop_process = subprocess.Popen(['python', 'stop.py'])
+            poll_exit = None
+            # play stream (3)
+            while len(data) > 0 and poll_exit is None:
+                stream.write(data)
+                data = wf.readframes(CHUNK)
+                poll_exit = exit_process.poll()
+                poll_stop = stop_process.poll()
+                if poll_stop is not None:
+                    proceed_process = subprocess.Popen(['python', 'proceed.py'])
+                    poll_proceed = None
+                    while poll_proceed is None and poll_exit is None:
+                        poll_proceed = proceed_process.poll()
+                        poll_exit = exit_process.poll()
+                    if poll_exit is None:
+                        stop_process = subprocess.Popen(['python', 'stop.py'])
+            if poll_stop is None:
+                stop_process.terminate()
+            else:
+                proceed_process.terminate()
+            # stop stream (4)
+            stream.stop_stream()
+            stream.close()
+
+            # close PyAudio (5)
+            p.terminate()
+            loading_screen.terminate()
+        except IOError:
+            self.song_name.SetValue("Error: no existing song.")
+            p.terminate()
+            loading_screen.terminate()
 
     def start_metronome(self, event):
-        self.to_thread += 1
-        metronome_tempo = int(self.metronome_text.GetValue())
-        hold = 60 / metronome_tempo
-        exit_process = subprocess.Popen(['python', 'exit.py'])
-        stop_process = subprocess.Popen(['python', 'stop.py'])
-        poll_exit = None
-        while poll_exit is None:
-            metronome()
-            sleep(hold)
-            poll_exit = exit_process.poll()
-            poll_stop = stop_process.poll()
-            if poll_stop is not None:
-                proceed_process = subprocess.Popen(['python', 'proceed.py'])
-                poll_proceed = None
-                while poll_proceed is None and poll_exit is None:
-                    poll_proceed = proceed_process.poll()
-                    poll_exit = exit_process.poll()
-                if poll_exit is None:
-                    stop_process = subprocess.Popen(['python', 'stop.py'])
-        if poll_stop is None:
-            stop_process.terminate()
-        else:
-            proceed_process.terminate()
+        try:
+            self.to_thread += 1
+            metronome_tempo = int(self.metronome_text.GetValue())
+            hold = 60 / metronome_tempo
+            exit_process = subprocess.Popen(['python', 'exit.py'])
+            stop_process = subprocess.Popen(['python', 'stop.py'])
+            poll_exit = None
+            while poll_exit is None:
+                metronome()
+                sleep(hold)
+                poll_exit = exit_process.poll()
+                poll_stop = stop_process.poll()
+                if poll_stop is not None:
+                    proceed_process = subprocess.Popen(['python', 'proceed.py'])
+                    poll_proceed = None
+                    while poll_proceed is None and poll_exit is None:
+                        poll_proceed = proceed_process.poll()
+                        poll_exit = exit_process.poll()
+                    if poll_exit is None:
+                        stop_process = subprocess.Popen(['python', 'stop.py'])
+            if poll_stop is None:
+                stop_process.terminate()
+            else:
+                proceed_process.terminate()
+        except ValueError:
+            self.song_name.SetValue("Error: metronome doesn't get the right values.")
+        except ZeroDivisionError:
+            self.song_name.SetValue("Error: we can't divide with zero yet.")
 
     def fast_standard_slow(self):
         # changed
@@ -294,6 +322,21 @@ class BpmFinder(wx.Frame):
         elif self.standard.GetValue():
             return STANDARD
         return SLOW
+
+
+def get_hwnds(pid=0):
+    """return a list of window handlers based on it process id"""
+
+    def callback(hwnd, hwnds):
+        if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+            _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+            if found_pid == pid:
+                hwnds.append(hwnd)
+        return True
+
+    hwnds = []
+    win32gui.EnumWindows(callback, hwnds)
+    return hwnds
 
 
 def metronome():
@@ -373,6 +416,7 @@ def delete_files():
     for f in files:
         if DOT_WAV in f and not METRONOME + str(1) in f:
             os.remove(f)
+
 
 ###########################################################################
 ## Bpm finder functions
