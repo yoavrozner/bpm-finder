@@ -22,12 +22,6 @@ import pyaudio
 import numpy as np
 from pydub import AudioSegment
 from time import sleep
-from Tkinter import *
-from PIL import Image, ImageTk
-import win32gui
-import win32con
-import win32process
-import ctypes
 
 ACCESS_TOKEN = 'access_token=UOmQ5JLigMe6w1hJbxuMr3Y6QaCaeNzk3GC2r5M3rMoigl14X87h5RacUdhGUiPy'
 BASE_SEARCH_BY_NAME = 'https://api.genius.com/search?q='
@@ -322,21 +316,6 @@ class BpmFinder(wx.Frame):
         elif self.standard.GetValue():
             return STANDARD
         return SLOW
-
-
-def get_hwnds(pid=0):
-    """return a list of window handlers based on it process id"""
-
-    def callback(hwnd, hwnds):
-        if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
-            _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
-            if found_pid == pid:
-                hwnds.append(hwnd)
-        return True
-
-    hwnds = []
-    win32gui.EnumWindows(callback, hwnds)
-    return hwnds
 
 
 def metronome():
