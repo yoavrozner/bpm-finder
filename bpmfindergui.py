@@ -178,6 +178,9 @@ class BpmFinder(wx.Frame):
 
     # Virtual event handlers, override them in your derived class
     def calculate_bpm(self, event):
+      """
+      Binds all the BPM calculation functions and uses them.
+      """
         loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
         try:
             #Call to url finder main
@@ -229,7 +232,9 @@ class BpmFinder(wx.Frame):
             loading_screen.terminate()
 
     def play_song(self, event):
-
+    """
+    Plays the last song that the user handled with.
+    """
         loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
 
         # instantiate PyAudio (1)
@@ -320,6 +325,9 @@ class BpmFinder(wx.Frame):
 
 
 def metronome():
+  """
+  Plays one tick of metronome.
+  """
     wf = wave.open(METRONOME + "1" + DOT_WAV, RB)
     p = pyaudio.PyAudio()
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
