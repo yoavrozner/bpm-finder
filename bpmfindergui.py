@@ -457,6 +457,12 @@ def find_max(signal):
 
 
 def bpm_check_speed(bpm):
+  """
+  Checks the speed of the song by it's bpm
+  and by that decides if the song is slow,
+  standard or fast and that is from the
+  common convention about song speed.
+  """
     if bpm <= 70:
         return SLOW
     elif bpm <= 150:
