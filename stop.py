@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*- 
 
-###########################################################################
-## Python code generated with wxFormBuilder (version Jun 17 2015)
-## http://www.wxformbuilder.org/
-##
-## PLEASE DO "NOT" EDIT THIS FILE!
-###########################################################################
+"""
+Name: Yoav Rozner
+Version: 1.16
+Description: Subprocess of the Bpm Finder which opens a window
+             to stop the song or the metronome.
+"""
 
 import wx
 import wx.xrc
 
+ARIEL = "Arial"
+
 ###########################################################################
-## Class BpmFinderExit
+## Class BpmFinderStop
 ###########################################################################
 
 
 class BpmFinderStop(wx.Frame):
+    """
+    Subprocess stop gui.
+    """
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"BpmFinderStop", pos=wx.DefaultPosition,
                           size=wx.Size(174, 135), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
@@ -28,18 +33,18 @@ class BpmFinderStop(wx.Frame):
         self.panel.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.panel.SetBackgroundColour(wx.Colour(128, 255, 0))
 
-        gridsizer = wx.GridSizer(0, 2, 0, 0)
+        grid_sizer = wx.GridSizer(0, 2, 0, 0)
 
-        boxsizer1 = wx.BoxSizer(wx.VERTICAL)
+        box_sizer1 = wx.BoxSizer(wx.VERTICAL)
 
-        self.stopbutton = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.Size(165, 105), 0)
-        self.stopbutton.SetFont(wx.Font(36, 74, 90, 90, False, "Arial"))
+        self.stop_button = wx.Button(self.panel, wx.ID_ANY, u"STOP", wx.DefaultPosition, wx.Size(165, 105), 0)
+        self.stop_button.SetFont(wx.Font(36, 74, 90, 90, False, ARIEL))
 
-        boxsizer1.Add(self.stopbutton, 0, wx.ALL, 5)
+        box_sizer1.Add(self.stop_button, 0, wx.ALL, 5)
 
-        self.panel.SetSizer(gridsizer)
+        self.panel.SetSizer(grid_sizer)
         self.panel.Layout()
-        gridsizer.Fit(self.panel)
+        grid_sizer.Fit(self.panel)
         frame_sizer.Add(self.panel, 1, wx.EXPAND | wx.ALL, 0)
 
         self.SetSizer(frame_sizer)
@@ -48,11 +53,13 @@ class BpmFinderStop(wx.Frame):
         self.Centre(wx.BOTH)
 
         # Connect Events
-        self.stopbutton.Bind(wx.EVT_BUTTON, self.stop)
+        self.stop_button.Bind(wx.EVT_BUTTON, self.stop)
 
-
-    # Virtual event handlers, overide them in your derived class
+    # Virtual event handlers, override them in your derived class
     def stop(self, event):
+        """
+        Closes the subprocess on button click.
+        """
         raise SystemExit
 
 
