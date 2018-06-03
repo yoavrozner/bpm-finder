@@ -16,8 +16,6 @@ import youtube_dl
 import os
 import wave
 import subprocess
-import struct
-import sys
 import pyaudio
 import numpy as np
 from pydub import AudioSegment
@@ -25,11 +23,14 @@ from time import sleep
 
 ACCESS_TOKEN = 'access_token=UOmQ5JLigMe6w1hJbxuMr3Y6QaCaeNzk3GC2r5M3rMoigl14X87h5RacUdhGUiPy'
 BASE_SEARCH_BY_NAME = 'https://api.genius.com/search?q='
+GENIUS_API_SONGS = 'https://api.genius.com/songs/'
 SAMPLE_LEN = 230000
 CHUNK = 1024
 TRY = "try"
 FAST = "fast"
 STANDARD = "standard"
+STANDARD_BPM = 150
+SLOW_BPM = 70
 SLOW = "slow"
 WAV = "wav"
 DOT = "."
@@ -39,11 +40,28 @@ ARIAL = "Arial"
 RESPONSE = "response"
 METRONOME = "metronome"
 RB = "rb"
+INT16 = 'Int16'
 SONG = "song"
 MEDIA = "media"
+YOUTUBE = "youtube"
+HITS = 'hits'
+RESULT = 'result'
+ID = 'id'
 URL = "url"
-GIF_FILE_NAME = 'loading.gif'
-
+CONVERT_TO_MILLISECONDS = 1000
+LOADING_SCREEN = 'loading_screen.py'
+PYTHON = 'python'
+EXIT = 'exit.py'
+STOP = 'stop.py'
+PROCEED = 'proceed.py'
+UNIDENTIFIED_SONG = "Error: unidentified song."
+NO_CONNECTION = "Error: there is no connection."
+UNMATCHED_SPEED = "Error: the speed doesn't match the song's speed."
+DOWNLOAD_FAIL = "Error: there was a download error please try again."
+UNIDENTIFIED_CHARACTERS = "Error: unidentified characters."
+UNKNOWN_SONG = "Error: no existing song."
+VALUE_ERROR = "Error: metronome doesn't get the right values."
+ZERO_DIVISION = "Error: we can't divide with zero yet."
 
 ###########################################################################
 ## Class BpmFinder
@@ -70,100 +88,100 @@ class BpmFinder(wx.Frame):
         self.panel.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.panel.SetBackgroundColour(wx.Colour(0, 0, 234))
 
-        gridsizer = wx.GridSizer(0, 2, 0, 0)
+        grid_sizer = wx.GridSizer(0, 2, 0, 0)
 
-        boxsizer1 = wx.BoxSizer(wx.VERTICAL)
+        box_sizer1 = wx.BoxSizer(wx.VERTICAL)
 
         self.step_1 = wx.StaticText(self.panel, wx.ID_ANY, u"Step 1 - Enter the name of the song:", wx.DefaultPosition,
                                     wx.DefaultSize, 0)
         self.step_1.Wrap(-1)
         self.step_1.SetFont(wx.Font(12, 74, 90, 90, False, ARIAL))
 
-        boxsizer1.Add(self.step_1, 0, wx.ALL, 5)
+        box_sizer1.Add(self.step_1, 0, wx.ALL, 5)
 
         self.song_name = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(400, -1), 0)
-        # Limits the maximum capcity of the textctrl to 100 characters.
+        # Limits the maximum capacity of the text control to 100 characters.
         self.song_name.SetMaxLength(100)
-        boxsizer1.Add(self.song_name, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer1.Add(self.song_name, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.step_2 = wx.StaticText(self.panel, wx.ID_ANY, u"Step 2 - Click on the relevant button", wx.DefaultPosition,
                                     wx.DefaultSize, 0)
         self.step_2.Wrap(-1)
         self.step_2.SetFont(wx.Font(12, 74, 90, 90, False, ARIAL))
 
-        boxsizer1.Add(self.step_2, 0, wx.ALL, 5)
+        box_sizer1.Add(self.step_2, 0, wx.ALL, 5)
 
         self.fast = wx.RadioButton(self.panel, wx.ID_ANY, u"Fast (150+ bpm)", wx.DefaultPosition, wx.DefaultSize, 0)
         self.fast.SetFont(wx.Font(20, 74, 90, 90, False, ARIAL))
 
-        boxsizer1.Add(self.fast, 0, wx.ALL, 5)
+        box_sizer1.Add(self.fast, 0, wx.ALL, 5)
 
         self.standard = wx.RadioButton(self.panel, wx.ID_ANY, u"Standard (70 - 150 bpm)", wx.DefaultPosition,
                                        wx.DefaultSize, 0)
         self.standard.SetFont(wx.Font(20, 74, 90, 90, False, ARIAL))
 
-        boxsizer1.Add(self.standard, 0, wx.ALL, 5)
+        box_sizer1.Add(self.standard, 0, wx.ALL, 5)
 
         self.slow = wx.RadioButton(self.panel, wx.ID_ANY, u"Slow (1 - 70 bpm)", wx.DefaultPosition, wx.DefaultSize, 0)
         self.slow.SetFont(wx.Font(20, 74, 90, 90, False, ARIAL))
 
-        boxsizer1.Add(self.slow, 0, wx.ALL, 5)
+        box_sizer1.Add(self.slow, 0, wx.ALL, 5)
 
         self.step_3 = wx.StaticText(self.panel, wx.ID_ANY, u"Step 3 - press ENTER", wx.DefaultPosition, wx.DefaultSize,
                                     0)
         self.step_3.Wrap(-1)
         self.step_3.SetFont(wx.Font(12, 74, 90, 90, False, ARIAL))
 
-        boxsizer1.Add(self.step_3, 0, wx.ALL, 5)
+        box_sizer1.Add(self.step_3, 0, wx.ALL, 5)
 
         self.enter = wx.Button(self.panel, wx.ID_ANY, u"ENTER", wx.DefaultPosition, wx.Size(100, 50), 0)
-        boxsizer1.Add(self.enter, 0, wx.ALL, 5)
+        box_sizer1.Add(self.enter, 0, wx.ALL, 5)
 
-        gridsizer.Add(boxsizer1, 1, wx.EXPAND, 5)
+        grid_sizer.Add(box_sizer1, 1, wx.EXPAND, 5)
 
-        boxsizer2 = wx.BoxSizer(wx.VERTICAL)
+        box_sizer2 = wx.BoxSizer(wx.VERTICAL)
 
         self.answer = wx.StaticText(self.panel, wx.ID_ANY, u"This song's BPM is:", wx.DefaultPosition, wx.DefaultSize,
                                     0)
         self.answer.Wrap(-1)
         self.answer.SetFont(wx.Font(12, 74, 90, 90, False, ARIAL))
 
-        boxsizer2.Add(self.answer, 0, wx.ALL, 5)
+        box_sizer2.Add(self.answer, 0, wx.ALL, 5)
 
         self.answer_bpm = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
         self.answer_bpm.SetMaxLength(100)
-        boxsizer2.Add(self.answer_bpm, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer2.Add(self.answer_bpm, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.play_the_song = wx.Button(self.panel, wx.ID_ANY, u"Click to play the song", wx.DefaultPosition,
                                        wx.DefaultSize, 0)
-        boxsizer2.Add(self.play_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer2.Add(self.play_the_song, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        self.metronome_introducer = wx.StaticText(self.panel, wx.ID_ANY, u"Metronome", wx.DefaultPosition,
-                                                  wx.DefaultSize, 0)
-        self.metronome_introducer.Wrap(-1)
-        self.metronome_introducer.SetFont(wx.Font(18, 74, 90, 90, False, ARIAL))
+        self.metronome_introduce = wx.StaticText(self.panel, wx.ID_ANY, u"Metronome", wx.DefaultPosition,
+                                                 wx.DefaultSize, 0)
+        self.metronome_introduce.Wrap(-1)
+        self.metronome_introduce.SetFont(wx.Font(18, 74, 90, 90, False, ARIAL))
 
-        boxsizer2.Add(self.metronome_introducer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer2.Add(self.metronome_introduce, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.metronome_instruction = wx.StaticText(self.panel, wx.ID_ANY, u"Write the bpm:", wx.DefaultPosition,
                                                    wx.DefaultSize, 0)
         self.metronome_instruction.Wrap(-1)
         self.metronome_instruction.SetFont(wx.Font(12, 74, 90, 90, False, ARIAL))
 
-        boxsizer2.Add(self.metronome_instruction, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer2.Add(self.metronome_instruction, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.metronome_text = wx.TextCtrl(self.panel, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
         self.metronome_text.SetMaxLength(100)
-        boxsizer2.Add(self.metronome_text, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer2.Add(self.metronome_text, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         self.start = wx.Button(self.panel, wx.ID_ANY, u"START", wx.DefaultPosition, wx.DefaultSize, 0)
-        boxsizer2.Add(self.start, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
+        box_sizer2.Add(self.start, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 5)
 
-        gridsizer.Add(boxsizer2, 1, wx.EXPAND, 5)
+        grid_sizer.Add(box_sizer2, 1, wx.EXPAND, 5)
 
-        self.panel.SetSizer(gridsizer)
+        self.panel.SetSizer(grid_sizer)
         self.panel.Layout()
-        gridsizer.Fit(self.panel)
+        grid_sizer.Fit(self.panel)
         frame_sizer.Add(self.panel, 1, wx.EXPAND | wx.ALL, 0)
 
         self.SetSizer(frame_sizer)
@@ -176,15 +194,12 @@ class BpmFinder(wx.Frame):
         self.play_the_song.Bind(wx.EVT_BUTTON, self.play_song)
         self.start.Bind(wx.EVT_BUTTON, self.start_metronome)
 
-    def __del__(self):
-        pass
-
     # Virtual event handlers, override them in your derived class
     def calculate_bpm(self, event):
         """
         Binds all the BPM calculation functions and uses them.
         """
-        loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
+        loading_screen = subprocess.Popen([PYTHON, LOADING_SCREEN])
         try:
             #Call to url finder main
             name_of_the_song = self.song_name.GetValue()
@@ -204,7 +219,7 @@ class BpmFinder(wx.Frame):
 
                 #Extract Raw Audio from Wav File
                 signal = spf.readframes(-1)
-                signal = np.fromstring(signal, 'Int16')
+                signal = np.fromstring(signal, INT16)
 
                 bpm = find_max(signal)
                 bpm_tempo = bpm_check_speed(bpm)
@@ -219,26 +234,26 @@ class BpmFinder(wx.Frame):
             os.remove(NEW_SONG + DOT_WAV)
             self.counter += 1
         except TypeError:
-            self.song_name.SetValue("Error: unidentified song.")
+            self.song_name.SetValue(UNIDENTIFIED_SONG)
             loading_screen.terminate()
         except requests.ConnectionError:
-            self.song_name.SetValue("Error: there is no connection.")
+            self.song_name.SetValue(NO_CONNECTION)
             loading_screen.terminate()
         except ValueError:
-            self.song_name.SetValue("Error: the speed doesn't match the song's speed.")
+            self.song_name.SetValue(UNMATCHED_SPEED)
             loading_screen.terminate()
         except youtube_dl.DownloadError:
-            self.song_name.SetValue("Error: there was a download error please try again.")
+            self.song_name.SetValue(DOWNLOAD_FAIL)
             loading_screen.terminate()
         except KeyError:
-            self.song_name.SetValue("Error: please use a real song name.")
+            self.song_name.SetValue(UNIDENTIFIED_CHARACTERS)
             loading_screen.terminate()
 
     def play_song(self, event):
         """
         Plays the last song that the user handled with.
         """
-        loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
+        loading_screen = subprocess.Popen([PYTHON, LOADING_SCREEN])
 
         # instantiate PyAudio (1)
         p = pyaudio.PyAudio()
@@ -254,9 +269,11 @@ class BpmFinder(wx.Frame):
             # read data
             data = wf.readframes(CHUNK)
 
-            exit_process = subprocess.Popen(['python', 'exit.py'])
-            stop_process = subprocess.Popen(['python', 'stop.py'])
+            exit_process = subprocess.Popen([PYTHON, EXIT])
+            stop_process = subprocess.Popen([PYTHON, STOP])
             poll_exit = None
+            poll_stop = None
+            proceed_process = None
             # play stream (3)
             while len(data) > 0 and poll_exit is None:
                 stream.write(data)
@@ -264,13 +281,13 @@ class BpmFinder(wx.Frame):
                 poll_exit = exit_process.poll()
                 poll_stop = stop_process.poll()
                 if poll_stop is not None:
-                    proceed_process = subprocess.Popen(['python', 'proceed.py'])
+                    proceed_process = subprocess.Popen([PYTHON, PROCEED])
                     poll_proceed = None
                     while poll_proceed is None and poll_exit is None:
                         poll_proceed = proceed_process.poll()
                         poll_exit = exit_process.poll()
                     if poll_exit is None:
-                        stop_process = subprocess.Popen(['python', 'stop.py'])
+                        stop_process = subprocess.Popen([PYTHON, STOP])
             if poll_stop is None:
                 stop_process.terminate()
             else:
@@ -283,7 +300,7 @@ class BpmFinder(wx.Frame):
             p.terminate()
             loading_screen.terminate()
         except IOError:
-            self.song_name.SetValue("Error: no existing song.")
+            self.song_name.SetValue(UNKNOWN_SONG)
             p.terminate()
             loading_screen.terminate()
 
@@ -294,30 +311,32 @@ class BpmFinder(wx.Frame):
         try:
             metronome_tempo = int(self.metronome_text.GetValue())
             hold = 60 / metronome_tempo
-            exit_process = subprocess.Popen(['python', 'exit.py'])
-            stop_process = subprocess.Popen(['python', 'stop.py'])
+            exit_process = subprocess.Popen([PYTHON, EXIT])
+            stop_process = subprocess.Popen([PYTHON, STOP])
             poll_exit = None
+            poll_stop = None
+            proceed_process = None
             while poll_exit is None:
                 metronome()
                 sleep(hold)
                 poll_exit = exit_process.poll()
                 poll_stop = stop_process.poll()
                 if poll_stop is not None:
-                    proceed_process = subprocess.Popen(['python', 'proceed.py'])
+                    proceed_process = subprocess.Popen([PYTHON, PROCEED])
                     poll_proceed = None
                     while poll_proceed is None and poll_exit is None:
                         poll_proceed = proceed_process.poll()
                         poll_exit = exit_process.poll()
                     if poll_exit is None:
-                        stop_process = subprocess.Popen(['python', 'stop.py'])
+                        stop_process = subprocess.Popen([PYTHON, STOP])
             if poll_stop is None:
                 stop_process.terminate()
             else:
                 proceed_process.terminate()
         except ValueError:
-            self.song_name.SetValue("Error: metronome doesn't get the right values.")
+            self.song_name.SetValue(VALUE_ERROR)
         except ZeroDivisionError:
-            self.song_name.SetValue("Error: we can't divide with zero yet.")
+            self.song_name.SetValue(ZERO_DIVISION)
 
     def fast_standard_slow(self):
         if self.fast.GetValue():
@@ -357,19 +376,20 @@ def metronome():
 
 def url_finder(name_of_the_song):
     """
-    Findes the url of the song by his name.
+    Finds the url of the song by its name.
+    @param name_of_the_song: the name of the song.
     """
     try:
         response = requests.get(BASE_SEARCH_BY_NAME + str(name_of_the_song) + "&" + ACCESS_TOKEN)
         response = response.json()
         index = 0
         result = response
-        id_item = (result[RESPONSE]['hits'][index]['result']['id'])
-        id_item = requests.get('https://api.genius.com/songs/' + str(id_item) + '?' + ACCESS_TOKEN)
+        id_item = (result[RESPONSE][HITS][index][RESULT][ID])
+        id_item = requests.get(GENIUS_API_SONGS + str(id_item) + '?' + ACCESS_TOKEN)
         id_item = id_item.json()
         place = 0
         my_url = str(unicode(id_item[RESPONSE][SONG][MEDIA][place][URL]))
-        while "youtube" not in my_url:
+        while YOUTUBE not in my_url:
             if place > 4:
                 break
             place += 1
@@ -381,8 +401,10 @@ def url_finder(name_of_the_song):
 
 def download_wav(url):
     """
-    Downloads the song from You Tube by the url.
+    Downloads the song from You Tube by the url that was given.
+    @param url: the url of the song that is going to be downloaded.
     """
+    # Settings changes which will allow the program to download the song as a wav file.
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [
@@ -398,6 +420,12 @@ def download_wav(url):
 
 
 def rename(destination_name):
+    """
+    Changes the name of the recent downloaded song to try.wav.
+    This function was built because the name of the song that was downloaded
+    is unknown and changes so this function detects this file and changes its name.
+    @param destination_name: the destination name for the wav file.
+    """
     files = [f for f in os.listdir(DOT) if os.path.isfile(f)]
     for f in files:
         if DOT_WAV in f and not TRY in f and not METRONOME in f:
@@ -425,12 +453,13 @@ def slice_wav_file(start_time):
     Slices the wave file to a 10 seconds wave file,
     so all the modules will be able to support and allow
     the code to use them.
+    @param start_time: time since the start of the song in seconds.
     """
     t1 = start_time
     t2 = t1 + 10
     # Works in milliseconds
-    t1 *= 1000
-    t2 *= 1000
+    t1 *= CONVERT_TO_MILLISECONDS
+    t2 *= CONVERT_TO_MILLISECONDS
     new_audio = AudioSegment.from_wav(TRY + DOT_WAV)
     new_audio = new_audio[t1:t2]
     new_audio.export(NEW_SONG + DOT_WAV, format=WAV)
@@ -439,9 +468,10 @@ def slice_wav_file(start_time):
 
 def find_max(signal):
     """
-    Findes the closest places in the signal to the
+    Finds the closest places in the signal to the
     maximum place in the signal between the average best working
     frequency range that is the most precised.
+    @param signal: the song's wave that was transformed into numbers.
     """
     max_signal = max(signal)
     arr_max = []
@@ -466,10 +496,11 @@ def bpm_check_speed(bpm):
     and by that decides if the song is slow,
     standard or fast and that is from the
     common convention about song speed.
+    @param bpm: the speed of the rhythm of the song in beats per minute.
     """
-    if bpm <= 70:
+    if bpm <= SLOW_BPM:
         return SLOW
-    elif bpm <= 150:
+    elif bpm <= STANDARD_BPM:
         return STANDARD
     return FAST
 
