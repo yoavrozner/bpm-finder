@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*- 
 
-###########################################################################
-## Python code generated with wxFormBuilder (version Jun 17 2015)
-## http://www.wxformbuilder.org/
-##
-## PLEASE DO "NOT" EDIT THIS FILE!
-###########################################################################
+"""
+Name: Yoav Rozner
+Version: 1.16
+Description: Subprocess of the Bpm Finder which opens a window
+             to proceed the stopped song or metronome.
+"""
 
 import wx
 import wx.xrc
 
+ARIEL = "Arial"
+
 ###########################################################################
-## Class BpmFinderExit
+## Class BpmFinderProceed
 ###########################################################################
 
 
 class BpmFinderProceed(wx.Frame):
+    """
+    Subprocess proceed gui.
+    """
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"BpmFinderProceed", pos=wx.DefaultPosition,
                           size=wx.Size(174, 135), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
@@ -28,18 +33,18 @@ class BpmFinderProceed(wx.Frame):
         self.panel.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.panel.SetBackgroundColour(wx.Colour(128, 255, 0))
 
-        gridsizer = wx.GridSizer(0, 2, 0, 0)
+        grid_sizer = wx.GridSizer(0, 2, 0, 0)
 
-        boxsizer1 = wx.BoxSizer(wx.VERTICAL)
+        box_sizer1 = wx.BoxSizer(wx.VERTICAL)
 
-        self.proceedbutton = wx.Button(self.panel, wx.ID_ANY, u"PROCEED", wx.DefaultPosition, wx.Size(165, 105), 0)
-        self.proceedbutton.SetFont(wx.Font(22, 74, 90, 90, False, "Arial"))
+        self.proceed_button = wx.Button(self.panel, wx.ID_ANY, u"PROCEED", wx.DefaultPosition, wx.Size(165, 105), 0)
+        self.proceed_button.SetFont(wx.Font(22, 74, 90, 90, False, ARIEL))
 
-        boxsizer1.Add(self.proceedbutton, 0, wx.ALL, 5)
+        box_sizer1.Add(self.proceed_button, 0, wx.ALL, 5)
 
-        self.panel.SetSizer(gridsizer)
+        self.panel.SetSizer(grid_sizer)
         self.panel.Layout()
-        gridsizer.Fit(self.panel)
+        grid_sizer.Fit(self.panel)
         frame_sizer.Add(self.panel, 1, wx.EXPAND | wx.ALL, 0)
 
         self.SetSizer(frame_sizer)
@@ -48,11 +53,13 @@ class BpmFinderProceed(wx.Frame):
         self.Centre(wx.BOTH)
 
         # Connect Events
-        self.proceedbutton.Bind(wx.EVT_BUTTON, self.proceed)
+        self.proceed_button.Bind(wx.EVT_BUTTON, self.proceed)
 
-
-    # Virtual event handlers, overide them in your derived class
+    # Virtual event handlers, override them in your derived class
     def proceed(self, event):
+        """
+        Closes the subprocess on button click.
+        """
         raise SystemExit
 
 
