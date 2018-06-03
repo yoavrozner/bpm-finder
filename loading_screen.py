@@ -1,44 +1,48 @@
 # -*- coding: utf-8 -*-
-"""
-Description:    Opens the loading animation
 
-name:           Elad Hayek
-date:           22.3.18
-file name:      loading_screen.py
+"""
+Name: Yoav Rozner
+Version: 1.16
+Description: Subprocess of the Bpm Finder which prints a gif on the screen.
 """
 
 from Tkinter import *
 from PIL import Image, ImageTk
 
 GIF_FILE_NAME = 'loading.gif'
+RGBA = 'RGBA'
+DURATION = 'duration'
+
+###########################################################################
+## Class BpmFinderGif
+###########################################################################
 
 
-class MyLabel(Label):
+class BpmFinderGif(Label):
+    """
+    Subprocess which creates a gif gui.
+    """
     def __init__(self, master, filename):
         """
-        creates the animation
-
-        :arg master = the Tk main window
-        :type master = tk window
-
-        :arg filename = the gif file name
-        :type filename = string
+        @param master: the Tk main window.
+        @param filename: the file name of the gif.
         """
         im = Image.open(filename)
         seq = []
         try:
             while 1:
                 seq.append(im.copy())
-                im.seek(len(seq))  # skip to next frame
+                # skip to next frame
+                im.seek(len(seq))
         except EOFError:
-            pass  # we're done
+            pass
 
         try:
-            self.delay = im.info['duration']
+            self.delay = im.info[DURATION]
         except KeyError:
             self.delay = 100
 
-        first = seq[0].convert('RGBA')
+        first = seq[0].convert(RGBA)
         self.frames = [ImageTk.PhotoImage(first)]
 
         Label.__init__(self, master, image=self.frames[0])
@@ -46,7 +50,7 @@ class MyLabel(Label):
         temp = seq[0]
         for image in seq[1:]:
             temp.paste(image)
-            frame = temp.convert('RGBA')
+            frame = temp.convert(RGBA)
             self.frames.append(ImageTk.PhotoImage(frame))
 
         self.idx = 0
@@ -55,7 +59,7 @@ class MyLabel(Label):
 
     def play(self):
         """
-        passes frame by frame to run the animation
+        Passes frame by frame to play the animation.
         """
         self.config(image=self.frames[self.idx])
         self.idx += 1
@@ -65,15 +69,12 @@ class MyLabel(Label):
 
 
 def main():
-    """
-    calls MyLabel class and runs the animation
-    """
     root = Tk()
     root.overrideredirect(1)
     root.eval('tk::PlaceWindow %s center' % root.winfo_pathname(
         root.winfo_id()))
-    anim = MyLabel(root, GIF_FILE_NAME)
-    anim.pack()
+    animation = BpmFinderGif(root, GIF_FILE_NAME)
+    animation.pack()
     root.mainloop()
 
 
