@@ -51,6 +51,9 @@ GIF_FILE_NAME = 'loading.gif'
 
 
 class BpmFinder(wx.Frame):
+    """
+    Main gui of the program.
+    """
     def __init__(self, parent):
         self.counter = 1
         self.stop_metronome_variable = True
@@ -178,9 +181,9 @@ class BpmFinder(wx.Frame):
 
     # Virtual event handlers, override them in your derived class
     def calculate_bpm(self, event):
-      """
-      Binds all the BPM calculation functions and uses them.
-      """
+        """
+        Binds all the BPM calculation functions and uses them.
+        """
         loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
         try:
             #Call to url finder main
@@ -232,9 +235,9 @@ class BpmFinder(wx.Frame):
             loading_screen.terminate()
 
     def play_song(self, event):
-    """
-    Plays the last song that the user handled with.
-    """
+        """
+        Plays the last song that the user handled with.
+        """
         loading_screen = subprocess.Popen(['python', 'loading_screen.py'])
 
         # instantiate PyAudio (1)
@@ -285,9 +288,9 @@ class BpmFinder(wx.Frame):
             loading_screen.terminate()
 
     def start_metronome(self, event):
-      """
-      Display a metronome with the wanted BPM.
-      """
+        """
+        Display a metronome with the wanted BPM.
+        """
         try:
             metronome_tempo = int(self.metronome_text.GetValue())
             hold = 60 / metronome_tempo
@@ -325,9 +328,9 @@ class BpmFinder(wx.Frame):
 
 
 def metronome():
-  """
-  Plays one tick of metronome.
-  """
+    """
+    Plays one tick of metronome.
+    """
     wf = wave.open(METRONOME + "1" + DOT_WAV, RB)
     p = pyaudio.PyAudio()
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
@@ -353,9 +356,9 @@ def metronome():
 
 
 def url_finder(name_of_the_song):
-  """
-  Findes the url of the song by his name.
-  """
+    """
+    Findes the url of the song by his name.
+    """
     try:
         response = requests.get(BASE_SEARCH_BY_NAME + str(name_of_the_song) + "&" + ACCESS_TOKEN)
         response = response.json()
@@ -377,9 +380,9 @@ def url_finder(name_of_the_song):
 
 
 def download_wav(url):
-  """
-  Downloads the song from You Tube by the url.
-  """
+    """
+    Downloads the song from You Tube by the url.
+    """
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [
@@ -418,11 +421,11 @@ def delete_files():
 
 
 def slice_wav_file(start_time):
-  """
-  Slices the wave file to a 10 seconds wave file,
-  so all the modules will be able to support and allow
-  the code to use them.
-  """
+    """
+    Slices the wave file to a 10 seconds wave file,
+    so all the modules will be able to support and allow
+    the code to use them.
+    """
     t1 = start_time
     t2 = t1 + 10
     # Works in milliseconds
@@ -430,15 +433,16 @@ def slice_wav_file(start_time):
     t2 *= 1000
     new_audio = AudioSegment.from_wav(TRY + DOT_WAV)
     new_audio = new_audio[t1:t2]
-    new_audio.export(NEW_SONG + DOT_WAV, format=WAV)  # Exports to a wav file in the current path.
+    new_audio.export(NEW_SONG + DOT_WAV, format=WAV)
+    # Exports to a wav file in the current path.
 
 
 def find_max(signal):
-  """
-  Findes the closest places in the signal to the
-  maximum place in the signal between the average best working
-  frequency range that is the most precised.
-  """
+    """
+    Findes the closest places in the signal to the
+    maximum place in the signal between the average best working
+    frequency range that is the most precised.
+    """
     max_signal = max(signal)
     arr_max = []
     place = []
@@ -457,12 +461,12 @@ def find_max(signal):
 
 
 def bpm_check_speed(bpm):
-  """
-  Checks the speed of the song by it's bpm
-  and by that decides if the song is slow,
-  standard or fast and that is from the
-  common convention about song speed.
-  """
+    """
+    Checks the speed of the song by it's bpm
+    and by that decides if the song is slow,
+    standard or fast and that is from the
+    common convention about song speed.
+    """
     if bpm <= 70:
         return SLOW
     elif bpm <= 150:
